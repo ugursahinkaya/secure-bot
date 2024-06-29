@@ -15,7 +15,7 @@ import { registerBundle } from "./utils/register-bundle.js";
 export const bundlesDir = path.join("./dist", "bundles");
 export function useBot<TOperations extends OperationsRecord>(
   options: BotOptions<TOperations>,
-  initialize?: (args?: any) => Promise<any> | void
+  initialize?: (args?: any) => Promise<any> | void,
 ) {
   let { authUrl } = options;
   const { socketUrl, operations, operationBundles, name } = options;
@@ -43,14 +43,14 @@ export function useBot<TOperations extends OperationsRecord>(
   options.middleware?.forEach((middleware) =>
     secureSocket.setMiddleware(
       middleware as Middleware<OperationsMap<TOperations>>,
-      {}
-    )
+      {},
+    ),
   );
 
   const call = async <TOperationName extends keyof TOperations>(
     operationName: TOperationName,
     input: OperationsMap<TOperations>[TOperationName][0],
-    context?: Context
+    context?: Context,
   ) => {
     return (await secureSocket.call(
       operationName,
@@ -60,7 +60,7 @@ export function useBot<TOperations extends OperationsRecord>(
           body: input,
         },
       },
-      input
+      input,
     )) as Promise<OperationsMap<TOperations>[TOperationName][1]>;
   };
 
@@ -78,7 +78,7 @@ export function useBot<TOperations extends OperationsRecord>(
     sendMessage: (
       receiver: string,
       message: string | AnyRecord,
-      context?: AnyRecord
+      context?: AnyRecord,
     ) => secureSocket.sendMessage(receiver, message, context),
   };
 }
