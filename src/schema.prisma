@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+    output   = "./auth-client"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = "file:./auth.db"
+}
+
+/// { "verboseName" : "Operation Bundle", "pluralName" : "Operation Bundleları", "rest" : [ "*" ], "format": "{{name}}" }
+model OperationBundle {
+    id         Int     @id @default(autoincrement())
+    name       String /// { "verboseName" : "Bundle İsmi" }
+    bundlePath String /// { "verboseName" : "Bundle Path", readonly:true }
+    status     Boolean /// { "verboseName" : "Durum" }            
+}
+
+/// { "verboseName" : "Kullanıcı", "pluralName" : "Kullanıcılar", "rest" : [ "*" ], "format": "{{firstName}} {{lastName}}" }
+model User {
+    id                Int                 @id @default(autoincrement())
+    firstName         String /// { "verboseName" : "İsim" }
+    lastName          String /// { "verboseName" : "Soyisim" }
+    phone             String              @unique /// { "verboseName" : "Telefon Numarası" }
+    role              String? /// { "verboseName" : "Kullanıcı Rolü" ,"choices":[ {"value":"admin","label":"Admin"}, {"value":"staff","label":"Staff"} , {"value":"user","label":"User"}]}
+    UserGroupRelation UserGroupRelation[]
+    UserRuleRelation  UserRuleRelation[]
+}
+
+/// { "verboseName" : "Kullanıcı Grubu", "pluralName" : "Kullanıcı Grupları", "rest" : [ "*" ] }
+model UserGroup {
+    id                Int                 @id @default(autoincrement())
+    name              String /// { "verboseName" : "Grup İsmi" }
+    UserGroupRelation UserGroupRelation[]
+    GroupRuleRelation GroupRuleRelation[]
+}
+
+/// { "verboseName" : "Kural", "pluralName" : "Kurallar"}
+model Rule {
+    id                Int                 @id @default(autoincrement())
+    name              String? /// { "verboseName" : "Kural İsmi"}
+    side              String? /// { "verboseName" : "Kategori" , "choices":[ {"value":"frontend","label":"Frontend"}, {"value":"backend","label":"Backend"} ]}
+    priority          Int                 @default(0) /// { "verboseName" : "Öncelik Sırası"}
+    type              String /// { "verboseName" : "Tip" , "choices":[ {"value":"allow","label":"İzin ver"}, {"value":"deny","label":"Engelle"} ]}
+    operation         String /// { "verboseName" : "Operasyon Adı" ,"visibleAt":{ "side":"backend"},"choices":{"operation":"operationNames"}}
+    kind              String /// { "verboseName" : "Kriter" , "default":"any", "choices":{"key":"side","values":{"frontend":[{"value":"any","label":"Any"} , {"value":"domain","label":"Domain"},{"value":"user","label":"Kullanıcı"} , {"value":"userRole","label":"Kullanıcı Rolü"} , {"value":"userGroup","label":"Kullanıcı Grubu"}],"backend":[ {"value":"any","label":"Any"} , {"value":"requestProtocol","label":"Protokol"} , {"value":"domain","label":"Domain"},{"value":"user","label":"Kullanıcı"} , {"value":"userRole","label":"Kullanıcı Rolü"} , {"value":"userGroup","label":"Kullanıcı Grubu"}]}}}
+    protocol          String? /// { "verboseName" : "Protokol" , "choices":[ {"value":"wss","label":"Socket"} , {"value":"rest","label":"Rest"} , {"value":"e2eRest","label":"e2e Rest"} , {"value":"anyRest","label":"Any Rest"} ], "visibleAt":{"kind":"requestProtocol", "side":"backend"}} 
+    role              String? /// { "verboseName" : "Kullanıcı Rolü" , "choices":[ {"value":"admin","label":"Admin"} , {"value":"staff","label":"Yönetici"} , {"value":"user","label":"Kullanıcı"} ] , "visibleAt":{"kind":"userRole", "side":"backend"}}
+    domain            String? /// { "verboseName" : "Domain" , "visibleAt":{"kind":"domain", "side":"backend"}}
+    list              Boolean? /// { "verboseName" : "Listeleme Yetkisi" , "visibleAt":{ "side":"frontend","model":"*" }}
+    create            Boolean? /// { "verboseName" : "Oluşturma Yetkisi" , "visibleAt":{ "side":"frontend","model":"*" }}
+    edit              Boolean? /// { "verboseName" : "Düzenleme Yetkisi" , "visibleAt":{ "side":"frontend","model":"*" }}
+    delete            Boolean? /// { "verboseName" : "Silme Yetkisi" , "visibleAt":{ "side":"frontend","model":"*" }}
+    UserRuleRelation  UserRuleRelation[]
+    GroupRuleRelation GroupRuleRelation[]
+}
+
+model UserGroupRelation {
+    id          Int @id @default(autoincrement())
+    userId      Int
+    userGroupId Int
+
+    user      User      @relation(fields: [userId], references: [id])
+    userGroup UserGroup @relation(fields: [userGroupId], references: [id])
+
+    @@unique([userId, userGroupId])
+}
+
+model UserRuleRelation {
+    id     Int  @id @default(autoincrement())
+    userId Int
+    ruleId Int
+    user   User @relation(fields: [userId], references: [id])
+    rule   Rule @relation(fields: [ruleId], references: [id])
+
+    @@unique([userId, ruleId])
+}
+
+model GroupRuleRelation {
+    id          Int       @id @default(autoincrement())
+    userGroupId Int
+    ruleId      Int
+    userGroup   UserGroup @relation(fields: [userGroupId], references: [id])
+    rule        Rule      @relation(fields: [ruleId], references: [id])
+
+    @@unique([userGroupId, ruleId])
+}
