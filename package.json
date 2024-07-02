@@ -5,7 +5,7 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "description": "",
   "author": "Uğur Şahinkaya <ugur@sahinkaya.xyz>",
   "contributors": [
@@ -47,7 +47,7 @@
     "build": "rm -rf ./dist && tsc -p tsconfig.build.json && cp ./src/schema.prisma ./dist && pnpm minify",
     "dev": "tsx watch -r dotenv-expand/config src/index.ts",
     "generate": "npx prisma generate --schema=./src/schema.prisma",
-    "postinstall": "npx prisma generate --schema=./dist/schema.prisma",
+    "postinstall": "npx prisma generate --schema=./dist/schema.prisma && npx prisma migrate dev --name=init --schema=./dist/schema.prisma && npx prisma migrate deploy --schema=./dist/schema.prisma",
     "minify": "find dist -name '*.js' -exec sh -c 'echo Minifying {} && terser {} -o {}' \\;"
   },
   "devDependencies": {
