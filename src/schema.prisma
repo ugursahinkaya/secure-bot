@@ -28,6 +28,13 @@ model User {
     role              String? /// { "verboseName" : "Kullanıcı Rolü" ,"choices":[ {"value":"admin","label":"Admin"}, {"value":"staff","label":"Staff"} , {"value":"user","label":"User"}]}
     UserGroupRelation UserGroupRelation[]
     UserRuleRelation  UserRuleRelation[]
+    password          String              @unique
+    refreshToken      RefreshToken[]
+    accessToken       AccessToken[]
+    online            Boolean?
+    lastSeen          DateTime?
+    deviceId          String?             @unique
+    queryToken        QueryToken[]
 }
 
 /// { "verboseName" : "Kullanıcı Grubu", "pluralName" : "Kullanıcı Grupları", "rest" : [ "*" ] }
@@ -87,4 +94,66 @@ model GroupRuleRelation {
     rule        Rule      @relation(fields: [ruleId], references: [id])
 
     @@unique([userGroupId, ruleId])
+}
+
+model QueryToken {
+    id       Int     @id @default(autoincrement())
+    token    String  @unique
+    crc      String  @unique
+    user     User?   @relation(fields: [userId], references: [id])
+    userId   Int?
+    device   Device? @relation(fields: [deviceId], references: [id])
+    deviceId Int?
+    subApp   String?
+
+    @@unique([userId, deviceId])
+}
+
+model AccesScope {
+    id          Int           @id @default(autoincrement())
+    name        String
+    include     String?
+    accessToken AccessToken[]
+}
+
+model AccessToken {
+    id               Int            @id @default(autoincrement())
+    token            String         @unique
+    name             String
+    userId           Int?
+    device           Device?        @relation(fields: [deviceId], references: [id])
+    deviceId         Int?
+    referrer         String?
+    owner            String?
+    ownerDescription String?
+    expiryDate       DateTime
+    refreshToken     RefreshToken[]
+    user             User?          @relation(fields: [userId], references: [id])
+    scope            AccesScope?    @relation(fields: [accesScopeId], references: [id])
+    accesScopeId     Int?
+
+    @@unique([deviceId])
+}
+
+model RefreshToken {
+    id            Int         @id @default(autoincrement())
+    token         String      @unique
+    accessTokenId Int
+    accessToken   AccessToken @relation(fields: [accessTokenId], references: [id])
+    user          User?       @relation(fields: [userId], references: [id])
+    userId        Int?
+    device        Device?     @relation(fields: [deviceId], references: [id])
+    deviceId      Int?
+
+    @@unique([deviceId, userId, accessTokenId])
+}
+
+model Device {
+    id           Int            @id @default(autoincrement())
+    userAgent    String?
+    ip           String?
+    referer      String?
+    queryToken   QueryToken[]
+    accessToken  AccessToken[]
+    refreshToken RefreshToken[]
 }

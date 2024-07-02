@@ -8,9 +8,13 @@ import { saveBundle, listBundle } from "./auth/index.js";
 import { registerModule } from "./utils/register-module.js";
 import { registerBundle } from "./utils/register-bundle.js";
 
-export function useSecureSocket<
-  TOperations extends SecureSocketOperations,
->(args: {
+export function useSecureSocket<TOperations extends SecureSocketOperations>({
+  socketUrl,
+  authUrl,
+  operations,
+  logger,
+  operationBundles,
+}: {
   socketUrl?: string;
   authUrl?: string;
   operations: TOperations;
@@ -20,7 +24,12 @@ export function useSecureSocket<
   };
   operationBundles?: Record<string, string>;
 }) {
-  const secureSocket = new SecureSocket(args);
+  const secureSocket = new SecureSocket({
+    socketUrl,
+    authUrl,
+    operations,
+    logger,
+  });
   const registerPromises: Promise<unknown>[] = [];
   secureSocket.use({
     useBundle: async ({
@@ -35,6 +44,14 @@ export function useSecureSocket<
     registerModule: ({ name, file }: { name: string; file: string }) => {
       void registerModule({ name, file }, secureSocket);
     },
+    loginOrRegister: async () => {
+      console.log("loginOrRegister1");
+      const refreshToken = await secureSocket.call("getRefreshToken");
+      console.log("refreshToken", refreshToken);
+
+      const res = await secureSocket.refresh(refreshToken);
+      console.log("res", res);
+    },
   });
   secureSocket.use({
     socketConnected: () => {
@@ -48,13 +65,13 @@ export function useSecureSocket<
   const eventHandlerOperations = {
     subscribe: async (
       params: Context<Operation<any, any>>,
-      message: { payload: { sender: string } },
+      message: { payload: { sender: string } }
     ) => {
       const { sender: user } = message.payload;
       const { call, after, payload } = params;
 
       secureSocket.eventRouter.setAfter(after, () =>
-        secureSocket.call(call, {}, payload),
+        secureSocket.call(call, {}, payload)
       );
       const res = await secureSocket.call(call, {}, payload);
       sendMessage(secureSocket, {
@@ -75,8 +92,8 @@ export function useSecureSocket<
     },
   };
   secureSocket.use(eventHandlerOperations);
-  if (args.operationBundles) {
-    Object.entries(args.operationBundles).map(([name, modulePath]) => {
+  if (operationBundles) {
+    Object.entries(operationBundles).map(([name, modulePath]) => {
       const promise = saveBundle({ name, modulePath, passIfExist: true });
       registerPromises.push(promise);
     });
@@ -99,7 +116,7 @@ export function useSecureSocket<
           secureSocket.logger.log(
             bundle.name,
             bundle.bundlePath,
-            "register error",
+            "register error"
           );
         });
       });
@@ -108,6 +125,6 @@ export function useSecureSocket<
       secureSocket.logger.error("register promises error", error);
     });
 
-  secureSocket.logger.log("Bot starting", args);
+  secureSocket.logger.log("Bot starting");
   return secureSocket;
 }
