@@ -45,12 +45,8 @@ export function useSecureSocket<TOperations extends SecureSocketOperations>({
       void registerModule({ name, file }, secureSocket);
     },
     loginOrRegister: async () => {
-      console.log("loginOrRegister1");
       const refreshToken = await secureSocket.call("getRefreshToken");
-      console.log("refreshToken", refreshToken);
-
-      const res = await secureSocket.refresh(refreshToken);
-      console.log("res", res);
+      await secureSocket.refresh(refreshToken);
     },
   });
   secureSocket.use({
