@@ -1,6 +1,9 @@
 import { SecureSocket, sendMessage } from "@ugursahinkaya/secure-socket";
+import { Logger } from "@ugursahinkaya/logger";
+
 import {
   Context,
+  LogLevel,
   Operation,
   SecureSocketOperations,
 } from "@ugursahinkaya/shared-types";
@@ -12,24 +15,22 @@ export function useSecureSocket<TOperations extends SecureSocketOperations>({
   socketUrl,
   authUrl,
   operations,
-  logger,
+  logLevel,
   operationBundles,
 }: {
   socketUrl?: string;
   authUrl?: string;
   operations: TOperations;
-  logger?: {
-    name: string;
-    levels: string[];
-  };
+  logLevel?: LogLevel;
   operationBundles?: Record<string, string>;
 }) {
   const secureSocket = new SecureSocket({
     socketUrl,
     authUrl,
     operations,
-    logger,
+    logLevel,
   });
+  const logger = new Logger("secure-socket", "57FA35", logLevel);
   const registerPromises: Promise<unknown>[] = [];
   secureSocket.use({
     useBundle: async ({
@@ -45,13 +46,14 @@ export function useSecureSocket<TOperations extends SecureSocketOperations>({
       void registerModule({ name, file }, secureSocket);
     },
     loginOrRegister: async () => {
+      console.log(`[secure-socket] loginOrRegister`);
       const refreshToken = await secureSocket.call("getRefreshToken");
       await secureSocket.refresh(refreshToken);
     },
   });
   secureSocket.use({
     socketConnected: () => {
-      console.log("Bot Socket Connected", secureSocket.socket?.CONNECTING);
+      logger.debug("Bot Socket Connected", "useSecureSocket");
       //@ts-expect-error only node env
       secureSocket.socket?.addEventListener("ping", () => {
         secureSocket.socket?.pong();
@@ -106,21 +108,20 @@ export function useSecureSocket<TOperations extends SecureSocketOperations>({
   Promise.all(registerPromises)
     .then(async () => {
       const res = await listBundle({ status: true });
-      secureSocket.logger.log("listBundle", res);
+      logger.debug(res, ["useSecureSocket", "listBundle"]);
       res.map((bundle: { bundlePath: string; name: string }) => {
         registerBundle(bundle.bundlePath, secureSocket).catch(() => {
-          secureSocket.logger.log(
-            bundle.name,
-            bundle.bundlePath,
-            "register error"
+          logger.debug(
+            { name: bundle.name, bundlePath: bundle.bundlePath },
+            "registerBundle"
           );
         });
       });
     })
     .catch((error) => {
-      secureSocket.logger.error("register promises error", error);
+      logger.error(error, ["useSecureSocket", "register promises"]);
     });
 
-  secureSocket.logger.log("Bot starting");
+  logger.info("Bot starting");
   return secureSocket;
 }
