@@ -1,17 +1,19 @@
-import { SecureSocket } from "@ugursahinkaya/secure-socket/index";
+import { SecureSocket } from "@ugursahinkaya/secure-socket";
 import path from "path";
 import { bundlesDir } from "../index.js";
 import fs from "fs";
 import JSZip from "jszip";
 import { saveBundle } from "../auth/index.js";
 import { registerBundle } from "./register-bundle.js";
+import { Logger } from "@ugursahinkaya/logger";
 
 export function registerModule(
   module: { name: string; file: string },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   socket: SecureSocket<any>,
+  logger: Logger
 ) {
-  socket.logger.log("registerModule", module);
+  logger.debug(module, "registerModule");
   try {
     const fileBuffer = Buffer.from(module.file, "base64");
     const zipFilePath = path.join(bundlesDir, `${module.name}.zip`);
@@ -34,16 +36,16 @@ export function registerModule(
       }
       fs.unlink(zipFilePath, (error) => {
         if (error) {
-          socket.logger.error("Error deleting zip file:", error);
+          logger.error(error, ["registerModule", "Error deleting zip file:"]);
         }
-        socket.logger.log("Zip file deleted:", zipFilePath);
+        logger.error(zipFilePath, ["registerModule", "Zip file deleted:"]);
       });
       const modulePath = path.join("/", module.name, "index.js");
       void saveBundle({
         modulePath,
         name: module.name,
       }).then(() => {
-        void registerBundle(modulePath, socket);
+        void registerBundle(modulePath, socket, logger);
       });
       return {
         modulePath,
@@ -51,6 +53,6 @@ export function registerModule(
       };
     });
   } catch (error) {
-    socket.logger.error(`Failed to load module at ${module.name}:`, error);
+    logger.error(`Failed to load module at ${module.name}:`, "registerModule");
   }
 }

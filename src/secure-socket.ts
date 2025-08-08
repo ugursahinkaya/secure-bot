@@ -1,6 +1,5 @@
 import { SecureSocket, sendMessage } from "@ugursahinkaya/secure-socket";
 import { Logger } from "@ugursahinkaya/logger";
-
 import {
   Context,
   LogLevel,
@@ -43,17 +42,17 @@ export function useSecureSocket<TOperations extends SecureSocketOperations>({
       return await saveBundle({ name, modulePath });
     },
     registerModule: ({ name, file }: { name: string; file: string }) => {
-      void registerModule({ name, file }, secureSocket);
+      void registerModule({ name, file }, secureSocket, logger);
     },
     loginOrRegister: async () => {
-      console.log(`[secure-socket] loginOrRegister`);
+      logger.debug("loginOrRegister", "useSecureSocket");
       const refreshToken = await secureSocket.call("getRefreshToken");
       await secureSocket.refresh(refreshToken);
     },
   });
   secureSocket.use({
     socketConnected: () => {
-      logger.debug("Bot Socket Connected", "useSecureSocket");
+      logger.debug("Bot socket connected", "useSecureSocket");
       //@ts-expect-error only node env
       secureSocket.socket?.addEventListener("ping", () => {
         secureSocket.socket?.pong();
@@ -83,10 +82,10 @@ export function useSecureSocket<TOperations extends SecureSocketOperations>({
       return;
     },
     unsubscribe: (...args: any[]) => {
-      console.log("eventHandlerOperations unsubscribe", args);
+      logger.debug(args, ["eventHandlerOperations", "unsubscribe"]);
     },
     updateSubscribtion: (...args: any[]) => {
-      console.log("eventHandlerOperations updateSubscribtion", args);
+      logger.debug(args, ["eventHandlerOperations", "updateSubscribtion"]);
     },
   };
   secureSocket.use(eventHandlerOperations);
@@ -108,9 +107,9 @@ export function useSecureSocket<TOperations extends SecureSocketOperations>({
   Promise.all(registerPromises)
     .then(async () => {
       const res = await listBundle({ status: true });
-      logger.debug(res, ["useSecureSocket", "listBundle"]);
+      logger.debug(res, ["useSecureSocket", "listBundle result"]);
       res.map((bundle: { bundlePath: string; name: string }) => {
-        registerBundle(bundle.bundlePath, secureSocket).catch(() => {
+        registerBundle(bundle.bundlePath, secureSocket, logger).catch(() => {
           logger.debug(
             { name: bundle.name, bundlePath: bundle.bundlePath },
             "registerBundle"
@@ -122,6 +121,6 @@ export function useSecureSocket<TOperations extends SecureSocketOperations>({
       logger.error(error, ["useSecureSocket", "register promises"]);
     });
 
-  logger.info("Bot starting");
-  return secureSocket;
+  logger.info("Bot starting", "useSecureSocket");
+  return { secureSocket, logger };
 }

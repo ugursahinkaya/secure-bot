@@ -1,10 +1,7 @@
 {
   "name": "@ugursahinkaya/secure-bot",
   "type": "module",
-  "version": "0.1.0",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
+  "version": "2.1.0",
   "license": "GPL-3.0 or Commerical",
   "description": "",
   "author": "Uğur Şahinkaya <ugur@sahinkaya.xyz>",
@@ -63,9 +60,9 @@
   },
   "dependencies": {
     "@prisma/client": "5.16.1",
-    "@ugursahinkaya/logger": "workspace:^0.1.2",
-    "@ugursahinkaya/secure-socket": "0.1.0",
-    "@ugursahinkaya/shared-types": "0.1.0",
+    "@ugursahinkaya/logger": "^2.1.0",
+    "@ugursahinkaya/secure-socket": "^2.1.0",
+    "@ugursahinkaya/shared-types": "^2.1.0",
     "dotenv": "^16.4.5",
     "dotenv-expand": "^11.0.6",
     "jszip": "^3.10.1",

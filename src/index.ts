@@ -5,9 +5,8 @@ import {
   Middleware,
   OperationsMap,
   OperationsRecord,
-} from "@ugursahinkaya/shared-types/index";
+} from "@ugursahinkaya/shared-types";
 import path from "path";
-
 import { authOperations, saveBundle } from "./auth/index.js";
 import { useSecureSocket } from "./secure-socket.js";
 import { rulesMiddleware } from "./auth/rules-middleware.js";
@@ -28,7 +27,7 @@ export function useBot<TOperations extends OperationsRecord>(
 
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   void initialize?.();
-  const secureSocket = useSecureSocket({
+  const { secureSocket, logger } = useSecureSocket({
     socketUrl,
     authUrl,
     operations: {
@@ -72,7 +71,7 @@ export function useBot<TOperations extends OperationsRecord>(
         modulePath,
         name,
       }).then(() => {
-        void registerBundle(modulePath, secureSocket);
+        void registerBundle(modulePath, secureSocket, logger);
       });
     },
     sendMessage: (
